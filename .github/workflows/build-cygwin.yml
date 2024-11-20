@@ -1,0 +1,66 @@
+name: Build Cygwin x64
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Choose Ubuntu to run the CI job
+
+    steps:
+    # Step 1: Checkout the repository code
+    - name: Checkout code
+      uses: actions/checkout@v3  # Pulls the latest code in the repository
+
+    # Step 2: Install MinGW-w64 (cross-compilation toolchain for Windows)
+    - name: Set up MinGW-w64 cross compiler
+      run: |
+        sudo apt update
+        sudo apt install -y mingw-w64
+
+    # Step 3: Install required build dependencies
+    - name: Install Build Dependencies
+      run: |
+        sudo apt install -y \
+          make \
+          gcc-mingw-w64-x86-64 \
+          autoconf \
+          automake \
+          perl \
+          wget \
+          git \
+          bison \
+          flex
+
+    # Step 4: Clone the Cygwin source code
+    - name: Clone Cygwin Source
+      run: |
+        git clone https://github.com/cygwin/cygwin.git
+
+    # Step 5: Configure Cygwin for x64 target architecture
+    - name: Configure Cygwin Build for x64
+      run: |
+        cd cygwin
+        ./configure --host=x86_64-w64-mingw32 --prefix=/opt/cygwin-x64
+
+    # Step 6: Build Cygwin
+    - name: Build Cygwin
+      run: |
+        cd cygwin
+        make -j$(nproc)  # Compiles using all available CPU cores
+
+    # Step 7: Install the Cygwin build (optional)
+    - name: Install Cygwin (optional)
+      run: |
+        cd cygwin
+        sudo make install
+
+    # Step 8: Verify that the build was successful (check bash version)
+    - name: Verify Build (optional)
+      run: |
+        /opt/cygwin-x64/bin/bash --version
